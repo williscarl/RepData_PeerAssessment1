@@ -1,0 +1,136 @@
+## Loading and preprocessing the data
+```{r}
+fitdata <- read.csv("activity.csv", header = TRUE, sep = ",", na.strings = "NA")
+```
+Explore the data
+```{r}
+summary(fitdata)
+str(fitdata)
+head(fitdata)
+```
+Convert the *date* variable to a Date class and the *interval* variable to a factor:
+```{r}
+fitdata$date <- as.Date(fitdata$date, format = "%Y-%m-%d")
+fitdata$interval <- factor(fitdata$interval)
+```
+
+Subsetting the dataset to ignore missing values
+```{r}
+NA_index <- is.na(as.character(fitdata$steps))
+noNA <- fitdata[!NA_index,]
+head(noNA)
+```
+Aggregating the number of steps taken each day
+Creating a data frame for steps taken each day
+```{r}
+stepsEachDay <- aggregate(steps ~date, data = noNA, sum)
+```
+Adding column names for created data frame
+```{r}
+colnames(stepsEachDay) <- c("date", "steps")
+```
+Histogram for the total number of steps taken each day
+```{r}
+hist(as.numeric(stepsEachDay$steps), breaks = 20, col = "red", 
+     xlab = "Number of Steps", main= "Total Number of Steps Taken Each Day")
+```
+Copy plot
+```{r}
+dev.copy(png,"plot1.png", width=480, height=480)
+```
+Sign out
+```{r}
+dev.off()
+```
+## Mean of steps each day
+```{r}
+mean(stepsEachDay$steps)
+```
+Median of steps each day
+```{r}
+median(stepsEachDay$steps)
+```
+Calculating the average
+```{r}
+steps_per_interval <- aggregate(noNA$steps, by=list(interval=noNA$interval), 
+                                FUN=mean)
+```
+Adding the columns names
+```{r}
+colnames(steps_per_interval) <- c("interval", "average_steps")
+```
+## The average daily activity pattern 
+```{r}
+plot(as.integer(levels(steps_per_interval$interval)), 
+     steps_per_interval$average_steps, type="l",
+     xlab = "Interval", ylab = "Average Number of Steps", 
+     main = "Average Daily Activity Pattern",  col ="purple")
+```
+The maximum number of average steps
+```{r}
+maxSteps <- max(steps_per_interval$average_steps)
+maxSteps
+```
+The 5-min interval containing the max number of steps
+```{r}
+interval_max_steps<-steps_per_interval[which.max(steps_per_interval$average_steps),]$interval
+interval_max_steps
+```
+## Imputing Missing Values
+For the steps variable:
+```{r}
+sum(is.na(as.character(fitdata$steps)))
+```
+For the date variable:
+```{r}
+sum(is.na(as.character(fitdata$date)))
+```
+For the interval variable:
+```{r}
+sum(is.na(as.character(fitdata$interval)))
+```
+Total number of missing values = 2304  
+
+Replacing missing values by the mean of that 5-minute interval.  
+Finding the indices of missing values (NAs)
+```{r}
+NA_index <- which(is.na(as.character(fitdata$steps)))
+complete_data <- fitdata
+```
+Imputing missing values using the mean for that 5-minute interval
+```{r}
+complete_data[NA_index,]$steps <- unlist(lapply(NA_index, FUN=function(NA_index){
+       steps_per_interval[fitdata[NA_index,]$interval==
+                                 steps_per_interval$interval,]$average_steps
+}))
+```
+Verifying complete data with the summary and str methods
+```{r}
+summary(complete_data)
+str(complete_data)
+```
+Creating a data frame with the steps taken for each day
+```{r}
+steps_each_day_complete <- aggregate(steps ~ date, data = complete_data, sum)
+```
+Adding column names to the created data frame
+```{r}
+colnames(steps_each_day_complete) <- c("date", "steps")
+```
+Making the histogram
+```{r}
+hist(as.numeric(steps_each_day_complete$steps), breaks = 20, col = "orange", 
+     xlab = "Number of Steps", main= "Total Number of Steps Taken Each Day")
+```
+Copy plot
+```{r}
+dev.copy(png,"plot2.png", width=480, height=480)
+```
+Sign out
+```{r}
+dev.off()
+```
+
+
+
+
